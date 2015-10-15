@@ -14,14 +14,20 @@ namespace ZeusSharp
     {
         private static bool active;
         private static bool toggle = true;
+        private static bool stealToggle = true;
         private static int manaForQ = 235;
         private static Font _text;
         private static System.Windows.Input.Key enableKey = System.Windows.Input.Key.Space;
         private static System.Windows.Input.Key toggleKey = System.Windows.Input.Key.J;
+        private static System.Windows.Input.Key stealToggleKey = System.Windows.Input.Key.L;
+
+        private static int[] QDmg = new int[4] { 100, 175, 275, 350 };
+        private static float QRange = 325;
 
         static void Main(string[] args)
         {
             Game.OnUpdate += Game_OnUpdate;
+            //Game.OnUpdate += Killsteal;
             Game.OnWndProc += Game_OnWndProc;
             Console.WriteLine("> Zeus# loaded!");
 
@@ -30,7 +36,7 @@ namespace ZeusSharp
                new FontDescription
                {
                    FaceName = "Tahoma",
-                   Height = 13,
+                   Height = 11,
                    OutputPrecision = FontPrecision.Default,
                    Quality = FontQuality.Default
                });
@@ -44,7 +50,11 @@ namespace ZeusSharp
         {
             var me = ObjectMgr.LocalHero;
             if (!Game.IsInGame || Game.IsWatchingGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus)
+            {
                 return;
+            }
+
+            // Items
 
             var orchid = me.FindItem("item_orchid");
             var sheepstick = me.FindItem("item_sheepstick");
@@ -56,7 +66,9 @@ namespace ZeusSharp
             var dagon = me.GetDagon();
             var blinkRange = 1200;
 
-            if (active && blink != null && me != null && toggle)
+            // Main combo
+
+            if (active && toggle)
             {
                 var target = me.ClosestToMouseTarget(1000);
                 if (target.IsAlive && target.IsVisible)
@@ -71,41 +83,41 @@ namespace ZeusSharp
 
                     Utils.Sleep(me.GetTurnTime(target) + Game.Ping, "blink");
 
-                    if (soulring != null && me.Health > 300 && me.Mana < me.Spellbook.Spell2.ManaCost && soulring.CanBeCasted())
+                    if (me.Health > 300 && me.Mana < me.Spellbook.Spell2.ManaCost && soulring.CanBeCasted())
                     {
                         soulring.UseAbility();
                     }
 
-                    if (arcane != null && me.Mana < me.Spellbook.Spell2.ManaCost && arcane.CanBeCasted())
+                    if (me.Mana < me.Spellbook.Spell2.ManaCost && arcane.CanBeCasted())
                     {
                         arcane.UseAbility();
                     }
 
-                    if (sheepstick != null && sheepstick.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("sheepstick"))
+                    if (sheepstick.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("sheepstick"))
                     {
                         sheepstick.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "sheepstick");
                     }
 
-                    if (orchid != null && orchid.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && !target.IsHexed() && Utils.SleepCheck("orchid"))
+                    if (orchid.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && !target.IsHexed() && Utils.SleepCheck("orchid"))
                     {
                         orchid.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "orchid");
                     }
 
-                    if (veil != null && veil.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("veil"))
+                    if (veil.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("veil"))
                     {
                         veil.UseAbility(target.Position);
                         Utils.Sleep(150 + Game.Ping, "veil");
                     }
 
-                    if (dagon != null && dagon.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("dagon"))
+                    if (dagon.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("dagon"))
                     {
                         dagon.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "dagon");
                     }
 
-                    if (shiva != null && shiva.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("shiva"))
+                    if (shiva.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("shiva"))
                     {
                         shiva.UseAbility();
                         Utils.Sleep(150 + Game.Ping, "shiva");
@@ -124,18 +136,38 @@ namespace ZeusSharp
                         Utils.Sleep(200 + Game.Ping, "W");
                     }
 
-                    if (((!me.Spellbook.Spell2.CanBeCasted() && !me.Spellbook.Spell1.CanBeCasted()) || target.IsMagicImmune()) && me.CanAttack())
+                    if ((!(me.Spellbook.Spell2.CanBeCasted() && me.Spellbook.Spell1.CanBeCasted()) || target.IsMagicImmune()) && me.CanAttack())
                     {
                         me.Attack(target);
                     }
 
                     }
-                    else
-                    {
-                        me.Attack(target);
-                    }
                 }
-            }
+        }
+
+        //public static void Killsteal(EventArgs args)
+        //{
+        //    var me = ObjectMgr.LocalHero;
+        //    var dagon = me.GetDagon();
+
+            // Killsteal
+
+            //if (stealToggle)
+            //{
+            //    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune)).ToList();
+            //    foreach (var v in enemy)
+            //    {
+            //        if (!me.Spellbook.Spell2.CanBeCasted() || me.Mana < me.Spellbook.Spell2.ManaCost)
+            //            return;
+            //
+            //        var damage = Math.Floor(QDmg[me.Spellbook.Spell2.Level - 1] * (1 - v.MagicDamageResist / 100));
+            //        if ((me.Distance2D(v) <= QRange) && v.Health < damage)
+            //        {
+            //            me.Spellbook.Spell2.UseAbility(v);
+            //        }
+            //    }
+            //}
+            //}
 
         private static void Game_OnWndProc(WndEventArgs args)
         {
@@ -155,6 +187,12 @@ namespace ZeusSharp
                     toggle = !toggle;
                     Utils.Sleep(150, "toggle");
                 }
+
+                if (Game.IsKeyDown(stealToggleKey) && Utils.SleepCheck("toggleKS"))
+                {
+                    stealToggle = !stealToggle;
+                    Utils.Sleep(150, "toggleKS");
+                }
             }
         }
 
@@ -169,7 +207,8 @@ namespace ZeusSharp
                 return;
 
             var player = ObjectMgr.LocalPlayer;
-            if (player == null || player.Team == Team.Observer)
+            var me = ObjectMgr.LocalHero;
+            if (player == null || player.Team == Team.Observer || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus)
                 return;
 
             if (active && toggle)
@@ -179,7 +218,7 @@ namespace ZeusSharp
 
             if (toggle && !active)
             {
-                _text.DrawText(null, "Zeus#: Enabled | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle", 4, 150, Color.White);
+                _text.DrawText(null, "Zeus#: Enabled | Killsteal: " + stealToggle + " [" + stealToggleKey + "] for toggle killsteal | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
             }
             if (!toggle)
             {
@@ -198,3 +237,6 @@ namespace ZeusSharp
         }
     }
 }
+ 
+ 
+ 
