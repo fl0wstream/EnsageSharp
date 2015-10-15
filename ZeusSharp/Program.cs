@@ -218,7 +218,8 @@ namespace ZeusSharp
 
             if (toggle && !active)
             {
-                _text.DrawText(null, "Zeus#: Enabled | Killsteal: " + stealToggle + " [" + stealToggleKey + "] for toggle killsteal | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
+                //_text.DrawText(null, "Zeus#: Enabled | Killsteal: " + stealToggle + " [" + stealToggleKey + "] for toggle killsteal | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
+                _text.DrawText(null, "Zeus#: Enabled | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
             }
             if (!toggle)
             {
