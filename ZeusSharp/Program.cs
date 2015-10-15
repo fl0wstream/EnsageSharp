@@ -6,18 +6,38 @@ using Ensage;
 using SharpDX;
 using Ensage.Common.Extensions;
 using Ensage.Common;
+using SharpDX.Direct3D9;
 
 namespace ZeusSharp
 {
     internal class Program
     {
         private static bool active;
+        private static bool toggle = true;
+        private static int manaForQ = 235;
+        private static Font _text;
+        private static System.Windows.Input.Key enableKey = System.Windows.Input.Key.Space;
+        private static System.Windows.Input.Key toggleKey = System.Windows.Input.Key.J;
 
         static void Main(string[] args)
         {
             Game.OnUpdate += Game_OnUpdate;
             Game.OnWndProc += Game_OnWndProc;
             Console.WriteLine("> Zeus# loaded!");
+
+            _text = new Font(
+               Drawing.Direct3DDevice9,
+               new FontDescription
+               {
+                   FaceName = "Tahoma",
+                   Height = 13,
+                   OutputPrecision = FontPrecision.Default,
+                   Quality = FontQuality.Default
+               });
+                Drawing.OnPreReset += Drawing_OnPreReset;
+                Drawing.OnPostReset += Drawing_OnPostReset;
+                Drawing.OnEndScene += Drawing_OnEndScene;
+                AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
         }
 
         public static void Game_OnUpdate(EventArgs args)
@@ -32,9 +52,11 @@ namespace ZeusSharp
             var soulring = me.FindItem("item_soul_ring");
             var arcane = me.FindItem("item_arcane_boots");
             var blink = me.FindItem("item_blink");
+            var shiva = me.FindItem("item_shivas_guard");
+            var dagon = me.GetDagon();
             var blinkRange = 1200;
 
-            if (active && blink != null && me != null)
+            if (active && blink != null && me != null && toggle)
             {
                 var target = me.ClosestToMouseTarget(1000);
                 if (target.IsAlive && target.IsVisible)
@@ -77,8 +99,20 @@ namespace ZeusSharp
                         Utils.Sleep(150 + Game.Ping, "veil");
                     }
 
+                    if (dagon != null && dagon.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("dagon"))
+                    {
+                        dagon.UseAbility(target);
+                        Utils.Sleep(150 + Game.Ping, "dagon");
+                    }
+
+                    if (shiva != null && shiva.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("shiva"))
+                    {
+                        shiva.UseAbility();
+                        Utils.Sleep(150 + Game.Ping, "shiva");
+                    }
+
                     if (me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700) &&
-                        !(me.Mana < 260))
+                        !(me.Mana < manaForQ))
                     {
                         me.Spellbook.SpellQ.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "Q");
@@ -107,7 +141,7 @@ namespace ZeusSharp
         {
             if (!Game.IsChatOpen)
             {
-                if (Game.IsKeyDown(System.Windows.Input.Key.Space))
+                if (Game.IsKeyDown(enableKey))
                 {
                     active = true;
                 }
@@ -115,7 +149,52 @@ namespace ZeusSharp
                 {
                     active = false;
                 }
+
+                if (Game.IsKeyDown(toggleKey) && Utils.SleepCheck("toggle"))
+                {
+                    toggle = !toggle;
+                    Utils.Sleep(150, "toggle");
+                }
             }
+        }
+
+        static void CurrentDomain_DomainUnload(object sender, EventArgs e)
+        {
+            _text.Dispose();
+        }
+
+        static void Drawing_OnEndScene(EventArgs args)
+        {
+            if (Drawing.Direct3DDevice9 == null || Drawing.Direct3DDevice9.IsDisposed || !Game.IsInGame)
+                return;
+
+            var player = ObjectMgr.LocalPlayer;
+            if (player == null || player.Team == Team.Observer)
+                return;
+
+            if (active && toggle)
+            {
+                _text.DrawText(null, "Zeus#: Comboing!", 4, 150, Color.Green);
+            }
+
+            if (toggle && !active)
+            {
+                _text.DrawText(null, "Zeus#: Enabled | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle", 4, 150, Color.White);
+            }
+            if (!toggle)
+            {
+                _text.DrawText(null, "Zeus#: Disabled | [" + toggleKey + "] for toggle", 4, 150, Color.WhiteSmoke);
+            }
+        }
+
+        static void Drawing_OnPostReset(EventArgs args)
+        {
+            _text.OnResetDevice();
+        }
+
+        static void Drawing_OnPreReset(EventArgs args)
+        {
+            _text.OnLostDevice();
         }
     }
 }
