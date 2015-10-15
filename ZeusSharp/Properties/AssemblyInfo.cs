@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: AssemblyTitle("EActivator#")]
+[assembly: AssemblyTitle("Zeus#")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("EnsageSharp")]
-[assembly: AssemblyProduct("EActivator#")]
+[assembly: AssemblyProduct("Zeus#")]
 [assembly: AssemblyCopyright("Copyright © Evervolv 2015")]
 [assembly: AssemblyTrademark("EnsageSharp")]
 [assembly: AssemblyCulture("")]
