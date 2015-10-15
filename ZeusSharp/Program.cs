@@ -7,8 +7,6 @@ using SharpDX;
 using Ensage.Common.Extensions;
 using Ensage.Common;
 
-using unitDB = Ensage.Common.UnitDatabase;
-
 namespace ZeusSharp
 {
     internal class Program
@@ -35,7 +33,6 @@ namespace ZeusSharp
             var arcane = me.FindItem("item_arcane_boots");
             var blink = me.FindItem("item_blink");
             var blinkRange = 1200;
-            var range = 700;
 
             if (active && blink != null && me != null)
             {
@@ -44,10 +41,10 @@ namespace ZeusSharp
                 {
                     var targetPos = target.Position;
 
-                    if (blink.CanBeCasted() && me.Distance2D(target) > blinkRange && Utils.SleepCheck("blink"))
+                    if (blink.CanBeCasted() && me.Distance2D(target) > (blinkRange - 400) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1"))
                     {
                         blink.UseAbility(targetPos);
-                        Utils.Sleep(1000 + Game.Ping, "blink");
+                        Utils.Sleep(1000 + Game.Ping, "blink1");
                     }
 
                     Utils.Sleep(me.GetTurnTime(target) + Game.Ping, "blink");
@@ -80,7 +77,8 @@ namespace ZeusSharp
                         Utils.Sleep(150 + Game.Ping, "veil");
                     }
 
-                    if (me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && !Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700))
+                    if (me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700) &&
+                        !(me.Mana < 260))
                     {
                         me.Spellbook.SpellQ.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "Q");
@@ -89,7 +87,7 @@ namespace ZeusSharp
                     if (me.Spellbook.Spell2.CanBeCasted() && me.Mana > me.Spellbook.Spell2.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("W"))
                     {
                         me.Spellbook.Spell2.UseAbility(target);
-                        Utils.Sleep(150 + Game.Ping, "W");
+                        Utils.Sleep(200 + Game.Ping, "W");
                     }
 
                     if (((!me.Spellbook.Spell2.CanBeCasted() && !me.Spellbook.Spell1.CanBeCasted()) || target.IsMagicImmune()) && me.CanAttack())
