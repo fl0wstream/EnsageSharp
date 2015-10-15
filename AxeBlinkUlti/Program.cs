@@ -1,104 +1,112 @@
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Windows.Input;
+
 using Ensage;
 using SharpDX;
+using Ensage.Common.Extensions;
+using Ensage.Common;
 using SharpDX.Direct3D9;
 
 namespace AxeBlinkUlti
 {
-    class Program
+    internal class Program
     {
-        const int WM_KEYUP = 0x0101;
-        const int WM_KEYDOWN = 0x0105;
+        private static Key toggleKey = Key.J;
+        private static Key enableKey = Key.Space;
+        private static bool toggle = true;
+        private static bool active = true;
+        private static Font _text;
 
-        private static Hero _target;
-        private static bool activated;
         static void Main(string[] args)
         {
-            Game.OnGameUpdate += AutoChop;
+            Game.OnUpdate += Game_OnUpdate;
+            Game.OnWndProc += Game_OnWndProc;
+            Console.WriteLine("> AxeBlinkUlti loaded!");
+
+            _text = new Font(
+               Drawing.Direct3DDevice9,
+               new FontDescription
+               {
+                   FaceName = "Tahoma",
+                   Height = 11,
+                   OutputPrecision = FontPrecision.Default,
+                   Quality = FontQuality.Default
+               });
+                Drawing.OnPreReset += Drawing_OnPreReset;
+                Drawing.OnPostReset += Drawing_OnPostReset;
+                Drawing.OnEndScene += Drawing_OnEndScene;
+                AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
         }
 
-        static void AutoChop(EventArgs args)
+        public static void Game_OnUpdate(EventArgs args)
         {
-            if (Game.IsInGame || Game.IsPaused || activated)
+            var me = ObjectMgr.LocalHero;
+            if (me.ClassID != ClassID.CDOTA_Unit_Hero_Axe)
                 return;
 
-            var me = EntityList.Hero;
-            if (me == null)
-                return;
-
-            if (me.ClassId != ClassId.CDOTA_Unit_Hero_Axe)
-            {
-                Game.OnGameUpdate -= AutoChop;
-                return;
-            }
-
-            Game.OnGameUpdate -= AutoChop;
-            Game.OnGameWndProc += Game_OnGameWndProc;
-
-            var Chop = me.Spellbook.SpellR;
-            var blink = me.Inventory.Items.FirstOrDefault(x => x.Name == "item_blink");
-
-            _target = GetChoppableEnemy(Chop.Damage);
-
-            if (_target != null)
-            {
-                if (Vector3.DistanceSquared(me.Position, _target.Position) > 400)
-                    { blink.UseAbility(_target.Position);
-                      return; }
-                else
-                    { Chop.UseAbility(_target);
-                    return;}
-            }
-
+            // TODO:
+            // Killsteal :)
+          
         }
 
-        static void Game_OnGameWndProc(WndProcEventArgs args)
+        private static void Game_OnWndProc(WndEventArgs args)
         {
-            if (args.MsgId != WM_KEYUP || args.WParam != 'F' || Game.IsChatOpen)
-                return;
-
-            if (activated == true)
+            if (!Game.IsChatOpen)
             {
-                activated = false;
-                return;
-            }
-
-            if (activated == false)
-            {
-                activated = true;
-                return;
-            }
-
-        }
-
-        static Hero GetChoppableEnemy(int ChopDmg)
-        {
-            var enemies = EntityList.GetEntities<Hero>().Where(x => x.IsVisible && x.IsAlive && !x.IsIllusion && x.Team != EntityList.Player.Team && x.Health <= ChopDmg).ToList();
-            var me = EntityList.GetLocalPlayer().Hero;
-
-            Hero result = null;
-            var int minimumDistance = 1500;
-
-            foreach (var hero in enemies)
-            {
-                var distance = Vector3.DistanceSquared(me.Position, hero.Position);
-                if (result == null || distance < minimumDistance)
+                if (Game.IsKeyDown(enableKey))
                 {
-                    minimumDistance = distance;
-                    result = hero;
+                    active = true;
+                }
+                else
+                {
+                    active = false;
                 }
             }
-            return result;
         }
 
-        static float GetDistance2D(Vector3 p1, Vector3 p2)
+        static void CurrentDomain_DomainUnload(object sender, EventArgs e)
         {
-            return (float) Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
+            _text.Dispose();
+        }
+
+        static void Drawing_OnEndScene(EventArgs args)
+        {
+            if (Drawing.Direct3DDevice9 == null || Drawing.Direct3DDevice9.IsDisposed || !Game.IsInGame)
+                return;
+
+            var player = ObjectMgr.LocalPlayer;
+            var me = ObjectMgr.LocalHero;
+            if (player == null || player.Team == Team.Observer || me.ClassID != ClassID.CDOTA_Unit_Hero_Axe)
+                return;
+
+            if (active && toggle)
+            {
+                _text.DrawText(null, "AxeBlinkUlti: Comboing!", 4, 150, Color.Green);
+            }
+
+            if (toggle && !active)
+            {
+                _text.DrawText(null, "AxeBlinkUlti: Enabled | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
+            }
+            if (!toggle)
+            {
+                _text.DrawText(null, "AxeBlinkUlti: Disabled | [" + toggleKey + "] for toggle", 4, 150, Color.WhiteSmoke);
+            }
+        }
+
+        static void Drawing_OnPostReset(EventArgs args)
+        {
+            _text.OnResetDevice();
+        }
+
+        static void Drawing_OnPreReset(EventArgs args)
+        {
+            _text.OnLostDevice();
         }
     }
 }
+ 
+ 
+ 
