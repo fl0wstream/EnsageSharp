@@ -67,7 +67,7 @@ namespace ZeusSharp
         public static void Game_OnUpdate(EventArgs args)
         {
             var me = ObjectMgr.LocalHero;
-            if (!Game.IsInGame || Game.IsWatchingGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus)
+            if (!Game.IsInGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus)
             {
                 return;
             }
@@ -86,14 +86,14 @@ namespace ZeusSharp
 
             // Main combo
 
-            if (active && toggle && me.CanCast() && Game.IsInGame)
+            if (active && toggle && me.CanCast())
             {
                 var target = me.ClosestToMouseTarget(1000);
                 if (target.IsAlive && !target.IsInvul())
                 {
                     var targetPos = target.Position;
 
-                    if (blink.CanBeCasted() && me.Distance2D(target) > (blinkRange - 500) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1") && blinkToggle)
+                    if (blink.CanBeCasted() && (me.Distance2D(target) > (blinkRange - 500)) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1") && blinkToggle)
                     {
                         blink.UseAbility(targetPos);
                         Utils.Sleep(1000 + Game.Ping, "blink1");
@@ -101,14 +101,16 @@ namespace ZeusSharp
 
                     Utils.Sleep(me.GetTurnTime(target) + Game.Ping, "blink");
 
-                    if (me.Health > 300 && me.Mana < me.Spellbook.Spell2.ManaCost && soulring.CanBeCasted())
+                    if (me.Health > 300 && me.Mana < me.Spellbook.Spell2.ManaCost && soulring.CanBeCasted() && Utils.SleepCheck("soulring"))
                     {
                         soulring.UseAbility();
+                        Utils.Sleep(150 + Game.Ping, "soulring");
                     }
 
-                    if (me.Mana < me.Spellbook.Spell2.ManaCost && arcane.CanBeCasted())
+                    if (me.Mana < me.Spellbook.Spell2.ManaCost && arcane.CanBeCasted() && Utils.SleepCheck("arcane"))
                     {
                         arcane.UseAbility();
+                        Utils.Sleep(150 + Game.Ping, "arcane");
                     }
 
                     if (sheepstick.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("sheepstick"))
@@ -141,8 +143,7 @@ namespace ZeusSharp
                         Utils.Sleep(150 + Game.Ping, "shiva");
                     }
 
-                    if (me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700) &&
-                        !(me.Mana < manaForQ))
+                    if (me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700) && me.Mana > manaForQ)
                     {
                         me.Spellbook.SpellQ.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "Q");
