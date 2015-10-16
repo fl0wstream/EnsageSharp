@@ -7,6 +7,7 @@ using SharpDX;
 using Ensage.Common.Extensions;
 using Ensage.Common;
 using SharpDX.Direct3D9;
+using System.Windows.Input;
 
 namespace ZeusSharp
 {
@@ -14,20 +15,26 @@ namespace ZeusSharp
     {
         private static bool active;
         private static bool toggle = true;
-        private static bool stealToggle = true;
+        private static bool stealToggle = false;
+        private static bool blinkToggle = true;
+        private static bool drawStealNotice = false;
+        private static bool confirmSteal = false;
         private static int manaForQ = 235;
         private static Font _text;
-        private static System.Windows.Input.Key enableKey = System.Windows.Input.Key.Space;
-        private static System.Windows.Input.Key toggleKey = System.Windows.Input.Key.J;
-        private static System.Windows.Input.Key stealToggleKey = System.Windows.Input.Key.L;
+        private static Font _notice;
+        private static Key enableKey = Key.Space;
+        private static Key toggleKey = Key.J;
+        private static Key stealToggleKey = Key.L;
+        private static Key blinkToggleKey = Key.P;
+        private static Key confirmStealKey = Key.G;
+        private static string steallableHero;
 
-        private static int[] QDmg = new int[4] { 100, 175, 275, 350 };
-        private static float QRange = 325;
+        private static int[] rDmg = new int[3] { 225, 350, 475 };
 
         static void Main(string[] args)
         {
+            Game.OnUpdate += Killsteal;
             Game.OnUpdate += Game_OnUpdate;
-            //Game.OnUpdate += Killsteal;
             Game.OnWndProc += Game_OnWndProc;
             Console.WriteLine("> Zeus# loaded!");
 
@@ -40,10 +47,21 @@ namespace ZeusSharp
                    OutputPrecision = FontPrecision.Default,
                    Quality = FontQuality.Default
                });
-                Drawing.OnPreReset += Drawing_OnPreReset;
-                Drawing.OnPostReset += Drawing_OnPostReset;
-                Drawing.OnEndScene += Drawing_OnEndScene;
-                AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+
+            _notice = new Font(
+               Drawing.Direct3DDevice9,
+               new FontDescription
+               {
+                   FaceName = "Tahoma",
+                   Height = 30,
+                   OutputPrecision = FontPrecision.Default,
+                   Quality = FontQuality.Default
+               });
+
+            Drawing.OnPreReset += Drawing_OnPreReset;
+            Drawing.OnPostReset += Drawing_OnPostReset;
+            Drawing.OnEndScene += Drawing_OnEndScene;
+            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
         }
 
         public static void Game_OnUpdate(EventArgs args)
@@ -68,14 +86,14 @@ namespace ZeusSharp
 
             // Main combo
 
-            if (active && toggle)
+            if (active && toggle && me.CanCast() && Game.IsInGame)
             {
                 var target = me.ClosestToMouseTarget(1000);
-                if (target.IsAlive && target.IsVisible)
+                if (target.IsAlive && !target.IsInvul())
                 {
                     var targetPos = target.Position;
 
-                    if (blink.CanBeCasted() && me.Distance2D(target) > (blinkRange - 400) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1"))
+                    if (blink.CanBeCasted() && me.Distance2D(target) > (blinkRange - 500) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1") && blinkToggle)
                     {
                         blink.UseAbility(targetPos);
                         Utils.Sleep(1000 + Game.Ping, "blink1");
@@ -145,29 +163,48 @@ namespace ZeusSharp
                 }
         }
 
-        //public static void Killsteal(EventArgs args)
-        //{
-        //    var me = ObjectMgr.LocalHero;
-        //    var dagon = me.GetDagon();
+        public static void Killsteal(EventArgs args)
+        {
+            if (Utils.SleepCheck("killstealR") && Game.IsInGame)
+            {
 
-            // Killsteal
+                drawStealNotice = false;
 
-            //if (stealToggle)
-            //{
-            //    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune)).ToList();
-            //    foreach (var v in enemy)
-            //    {
-            //        if (!me.Spellbook.Spell2.CanBeCasted() || me.Mana < me.Spellbook.Spell2.ManaCost)
-            //            return;
-            //
-            //        var damage = Math.Floor(QDmg[me.Spellbook.Spell2.Level - 1] * (1 - v.MagicDamageResist / 100));
-            //        if ((me.Distance2D(v) <= QRange) && v.Health < damage)
-            //        {
-            //            me.Spellbook.Spell2.UseAbility(v);
-            //        }
-            //    }
-            //}
-            //}
+                var me = ObjectMgr.LocalHero;
+                var aghanim = me.FindItem("item_aghanim_scepter");
+
+                if (me.HasItem(ClassID.CDOTA_Item_UltimateScepter))
+                {
+                    rDmg = new int[3] { 440, 540, 640 };
+                }
+                else
+                {
+                    rDmg = new int[3] { 225, 350, 475 };
+                }
+
+                if (!active && toggle && me.Spellbook.Spell4.CanBeCasted() && me.Mana > me.Spellbook.Spell4.ManaCost)
+                {
+                    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune)).ToList();
+                    foreach (var v in enemy)
+                    {
+
+                        var damage = Math.Floor(rDmg[me.Spellbook.Spell4.Level - 1] * (1 - v.MagicDamageResist / 100));
+                        if (v.Health < damage)
+                        {
+                            drawStealNotice = true;
+                            steallableHero = v.NetworkName;
+                            steallableHero = steallableHero.Replace("CDOTA_Unit_Hero_", "");
+                            steallableHero = steallableHero.ToUpper();
+
+                            if (confirmSteal || stealToggle) {
+                                me.Spellbook.Spell4.UseAbility();
+                                Utils.Sleep(300, "killstealR");
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         private static void Game_OnWndProc(WndEventArgs args)
         {
@@ -193,12 +230,28 @@ namespace ZeusSharp
                     stealToggle = !stealToggle;
                     Utils.Sleep(150, "toggleKS");
                 }
+
+                if (Game.IsKeyDown(blinkToggleKey) && Utils.SleepCheck("toggleBlink"))
+                {
+                    blinkToggle = !blinkToggle;
+                    Utils.Sleep(150, "toggleBlink");
+                }
+
+                if (Game.IsKeyDown(confirmStealKey))
+                {
+                    confirmSteal = true;
+                }
+                else
+                {
+                    confirmSteal = false;
+                }
             }
         }
 
         static void CurrentDomain_DomainUnload(object sender, EventArgs e)
         {
             _text.Dispose();
+            _notice.Dispose();
         }
 
         static void Drawing_OnEndScene(EventArgs args)
@@ -218,23 +271,28 @@ namespace ZeusSharp
 
             if (toggle && !active)
             {
-                //_text.DrawText(null, "Zeus#: Enabled | Killsteal: " + stealToggle + " [" + stealToggleKey + "] for toggle killsteal | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
-                _text.DrawText(null, "Zeus#: Enabled | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
+                _text.DrawText(null, "Zeus#: Enabled | Blink: " + blinkToggle + " | AutoUltiSteal: " + stealToggle + " | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo | [" + blinkToggleKey + "] for toggle blink | [" + stealToggleKey + "] for toggle AutoUltiSteal", 4, 150, Color.White);
             }
             if (!toggle)
             {
                 _text.DrawText(null, "Zeus#: Disabled | [" + toggleKey + "] for toggle", 4, 150, Color.WhiteSmoke);
+            }
+            if (drawStealNotice && !confirmSteal && !stealToggle)
+            {
+                _notice.DrawText(null, "PRESS [" + confirmStealKey + "] FOR STEAL " + steallableHero + "!", 4, 400, Color.Yellow);
             }
         }
 
         static void Drawing_OnPostReset(EventArgs args)
         {
             _text.OnResetDevice();
+            _notice.OnResetDevice();
         }
 
         static void Drawing_OnPreReset(EventArgs args)
         {
             _text.OnLostDevice();
+            _notice.OnLostDevice();
         }
     }
 }
