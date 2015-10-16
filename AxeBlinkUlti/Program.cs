@@ -13,11 +13,15 @@ namespace AxeBlinkUlti
 {
     internal class Program
     {
+        private static Ability Chop;
+        private static Item Blink;
+        private static Hero me;
+        private static Hero target;
         private static Key toggleKey = Key.J;
-        private static Key enableKey = Key.Space;
         private static bool toggle = true;
-        private static bool active = true;
         private static Font _text;
+        private static int[] _ChopDmg = new int[3];
+        private static int minimumDistance = 400;
 
         static void Main(string[] args)
         {
@@ -42,26 +46,63 @@ namespace AxeBlinkUlti
 
         public static void Game_OnUpdate(EventArgs args)
         {
-            var me = ObjectMgr.LocalHero;
+            me = ObjectMgr.LocalHero;
+
             if (me.ClassID != ClassID.CDOTA_Unit_Hero_Axe)
                 return;
+            if (me == null)
+                return;
 
-            // TODO:
-            // Killsteal :)
-          
+            Blink = me.FindItem("item_blink");
+
+            Chop = me.Spellbook.Spell4;
+
+            if (me.HasItem(ClassID.CDOTA_Item_UltimateScepter))
+            {
+                _ChopDmg = new int[3] { 300, 425, 550 };
+            }
+            else
+            {
+                _ChopDmg = new int[3] { 250, 325, 400 };
+            }
+
+            var ChopDmg = _ChopDmg[Chop.Level - 1];
+
+            var enemies = ObjectMgr.GetEntities<Hero>().Where(x => x.IsVisible && x.IsAlive && !x.IsIllusion && x.Team != me.Team && x.Health <= ChopDmg).ToList();
+
+            foreach (var hero in enemies)
+            {
+                var distance = me.Distance2D(hero);
+                if (target == null || distance < minimumDistance)
+                {
+                    target = hero;
+                }
+            }
+
+            if (target != null && Utils.SleepCheck("chop") && toggle && Chop.CanBeCasted() && me.IsAlive)
+            {
+                if (me.Distance2D(target) > 400 && Utils.SleepCheck("blink") && Blink.CanBeCasted() && me.Health > 250)
+                {
+                    Blink.UseAbility(target.Position);
+                    Utils.Sleep(150 + Game.Ping, "blink");
+                }
+                else
+                {
+                    Chop.UseAbility(target);
+                    target = null;
+                    Utils.Sleep(150 + Game.Ping, "chop");
+                }
+            }
         }
 
         private static void Game_OnWndProc(WndEventArgs args)
         {
             if (!Game.IsChatOpen)
             {
-                if (Game.IsKeyDown(enableKey))
+                if (Game.IsKeyDown(toggleKey) && Utils.SleepCheck("toggle"))
                 {
-                    active = true;
-                }
-                else
-                {
-                    active = false;
+                    toggle = !toggle;
+                    Utils.Sleep(300, "toggle");
                 }
             }
         }
@@ -81,18 +122,13 @@ namespace AxeBlinkUlti
             if (player == null || player.Team == Team.Observer || me.ClassID != ClassID.CDOTA_Unit_Hero_Axe)
                 return;
 
-            if (active && toggle)
+            if (toggle)
             {
-                _text.DrawText(null, "AxeBlinkUlti: Comboing!", 4, 150, Color.Green);
+                _text.DrawText(null, "AxeBlinkUlti: Enabled | [" + toggleKey + "] for toggle", 4, 180, Color.White);
             }
-
-            if (toggle && !active)
+            else
             {
-                _text.DrawText(null, "AxeBlinkUlti: Enabled | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo", 4, 150, Color.White);
-            }
-            if (!toggle)
-            {
-                _text.DrawText(null, "AxeBlinkUlti: Disabled | [" + toggleKey + "] for toggle", 4, 150, Color.WhiteSmoke);
+                _text.DrawText(null, "AxeBlinkUlti: Disabled | [" + toggleKey + "] for toggle", 4, 180, Color.WhiteSmoke);
             }
         }
 
