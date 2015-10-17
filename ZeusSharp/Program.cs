@@ -105,7 +105,19 @@ namespace ZeusSharp
                 refresher = me.FindItem("item_refresher");
 
             var blinkRange = 1200;
-            var refresherComboManacost = me.Spellbook.Spell4.ManaCost + me.Spellbook.Spell2.ManaCost + me.Spellbook.Spell1.ManaCost + veil.ManaCost + orchid.ManaCost + sheepstick.ManaCost;
+            var refresherComboManacost = me.Spellbook.Spell4.ManaCost + me.Spellbook.Spell2.ManaCost + me.Spellbook.Spell1.ManaCost;
+
+            if (veil != null)
+                refresherComboManacost += veil.ManaCost;
+
+            if (orchid != null)
+                refresherComboManacost += orchid.ManaCost;
+
+            if (sheepstick != null)
+                refresherComboManacost += sheepstick.ManaCost;
+
+            if (refresher != null)
+                refresherComboManacost += refresher.ManaCost;
 
             // Main combo
 
@@ -183,14 +195,14 @@ namespace ZeusSharp
                         me.Attack(target);
                     }
 
-                    if (refresherToggle && me.Mana > refresherComboManacost && target != null && !target.IsMagicImmune() && me.Spellbook.Spell4.CanBeCasted() && Utils.SleepCheck("ultiRefresher"))
+                    if (refresherToggle && !target.IsMagicImmune() && me.Spellbook.Spell4.CanBeCasted() && Utils.SleepCheck("ultiRefresher"))
                     {
                         me.Spellbook.Spell4.UseAbility();
-                        Utils.Sleep(50 + Game.Ping, "ultiRefresher");
+                        Utils.Sleep(100 + Game.Ping, "ultiRefresher");
                     }
 
                     if (refresherToggle && refresher != null && refresher.CanBeCasted() && Utils.SleepCheck("refresher") && !target.IsMagicImmune() && target != null &&
-                        !me.Spellbook.Spell4.CanBeCasted() && !me.Spellbook.Spell2.CanBeCasted() && !me.Spellbook.Spell1.CanBeCasted() && me.Mana > refresherComboManacost)
+                        !me.Spellbook.Spell4.CanBeCasted() && !me.Spellbook.Spell2.CanBeCasted())
                     {
                         refresher.UseAbility();
                         Utils.Sleep(300 + Game.Ping, "refresher");
@@ -291,7 +303,9 @@ namespace ZeusSharp
                 }
 
                 if (refresher == null)
+                {
                     refresherToggle = false;
+                }
             }
         }
 
