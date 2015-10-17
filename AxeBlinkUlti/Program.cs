@@ -53,9 +53,11 @@ namespace AxeBlinkUlti
             if (me == null)
                 return;
 
-            Blink = me.FindItem("item_blink");
+            if (Blink == null)
+                Blink = me.FindItem("item_blink");
 
-            Chop = me.Spellbook.Spell4;
+            if (Chop == null)
+                Chop = me.Spellbook.Spell4;
 
             if (me.HasItem(ClassID.CDOTA_Item_UltimateScepter))
             {
@@ -68,29 +70,35 @@ namespace AxeBlinkUlti
 
             var ChopDmg = _ChopDmg[Chop.Level - 1];
 
-            var enemies = ObjectMgr.GetEntities<Hero>().Where(x => x.IsVisible && x.IsAlive && !x.IsIllusion && x.Team != me.Team && x.Health <= ChopDmg).ToList();
-
-            foreach (var hero in enemies)
+            if (toggle)
             {
-                var distance = me.Distance2D(hero);
-                if (target == null || distance < minimumDistance)
-                {
-                    target = hero;
-                }
-            }
+                var enemies = ObjectMgr.GetEntities<Hero>().Where(x => x.IsVisible && x.IsAlive && !x.IsIllusion && x.Team != me.Team && x.Health <= ChopDmg).ToList();
 
-            if (target != null && Utils.SleepCheck("chop") && toggle && Chop.CanBeCasted() && me.IsAlive)
-            {
-                if (me.Distance2D(target) > 400 && Utils.SleepCheck("blink") && Blink.CanBeCasted() && me.Health > 250)
+                foreach (var hero in enemies)
                 {
-                    Blink.UseAbility(target.Position);
-                    Utils.Sleep(150 + Game.Ping, "blink");
+                    var distance = me.Distance2D(hero);
+                    if (target == null || distance < minimumDistance)
+                    {
+                        target = hero;
+                    }
                 }
-                else
+
+                if (target != null && Utils.SleepCheck("chop") && Chop.CanBeCasted() && me.IsAlive)
                 {
-                    Chop.UseAbility(target);
-                    target = null;
-                    Utils.Sleep(150 + Game.Ping, "chop");
+                    if (Blink != null && me.Distance2D(target) > 400 && Utils.SleepCheck("blink") && Blink.CanBeCasted() && me.Health > 250)
+                    {
+                        Blink.UseAbility(target.Position);
+                        Utils.Sleep(150 + Game.Ping, "blink");
+                    }
+                    else
+                    {
+                        if (target != null && Chop != null)
+                        {
+                            Chop.UseAbility(target);
+                            target = null;
+                            Utils.Sleep(150 + Game.Ping, "chop");
+                        }
+                    }
                 }
             }
         }
