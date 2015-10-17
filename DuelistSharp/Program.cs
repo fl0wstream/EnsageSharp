@@ -22,7 +22,7 @@ namespace DuelistSharp
         private static Key killstealToggleKey = Key.K;
         private static bool toggle = true;
         private static bool active;
-        private static bool bkbToggle = true;
+        private static bool bkbToggle = false;
         private static bool killstealToggle = true;
         private static Font _text;
         private static int[] qDmg = new int[4] { 40, 80, 120, 160 };
@@ -97,7 +97,7 @@ namespace DuelistSharp
             if (active && toggle)
             {
                 target = me.ClosestToMouseTarget(1000);
-                if (target != null && target.IsAlive && !target.IsInvul())
+                if (target != null && target.IsAlive && !target.IsInvul() && !target.IsIllusion)
                 {
                     if (me.CanAttack() && me.CanCast()) {
 
@@ -109,22 +109,16 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "soulring");
                         }
 
-                        if (solar != null && solar.CanBeCasted() && Utils.SleepCheck("solar"))
-                        {
-                            solar.UseAbility(target);
-                            Utils.Sleep(150 + Game.Ping, "solar");
-                        }
-
                         if (bladeMail != null && bladeMail.CanBeCasted() && Utils.SleepCheck("blademail"))
                         {
                             bladeMail.UseAbility();
                             Utils.Sleep(150 + Game.Ping, "blademail");
                         }
 
-                        if (armlet != null && armlet.CanBeCasted() && Utils.SleepCheck("armlet"))
+                        if (armlet != null && armlet.CanBeCasted() && Utils.SleepCheck("armlet1"))
                         {
                             armlet.ToggleAbility();
-                            Utils.Sleep(150 + Game.Ping, "armlet");
+                            Utils.Sleep(150 + Game.Ping, "armlet1");
                         }
 
                         if (mjollnir != null && mjollnir.CanBeCasted() && Utils.SleepCheck("mjollnir"))
@@ -145,6 +139,8 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "heal");
                         }
 
+                        Utils.ChainStun(me, 100, null, false);
+
                         // Blink
 
                         if (Blink != null && Blink.CanBeCasted() && me.Distance2D(target) > 300 && Utils.SleepCheck("blink1"))
@@ -155,22 +151,31 @@ namespace DuelistSharp
 
                         // Enemy items & skills
 
+                        if (abyssal != null && abyssal.CanBeCasted() && Utils.SleepCheck("abyssal"))
+                        {
+                            abyssal.UseAbility(target);
+                            Utils.Sleep(400 + Game.Ping, "abyssal");
+                        }
+
+                        if (abyssal != null)
+                            Utils.ChainStun(me, 310, null, false);
+
                         if (medallion != null && medallion.CanBeCasted() && Utils.SleepCheck("medallion"))
                         {
                             medallion.UseAbility(target);
                             Utils.Sleep(150 + Game.Ping, "medallion");
                         }
 
-                        if (abyssal != null && abyssal.CanBeCasted() && Utils.SleepCheck("abyssal"))
+                        if (solar != null && solar.CanBeCasted() && Utils.SleepCheck("solar"))
                         {
-                            abyssal.UseAbility(target);
-                            Utils.Sleep(300 + Game.Ping, "abyssal");
+                            solar.UseAbility(target);
+                            Utils.Sleep(200 + Game.Ping, "solar");
                         }
 
                         if (dust != null && dust.CanBeCasted() && (target.CanGoInvis() || target.IsInvisible()) && Utils.SleepCheck("dust"))
                         {
                             dust.UseAbility();
-                            Utils.Sleep(150 + Game.Ping, "dust");
+                            Utils.Sleep(200 + Game.Ping, "dust");
                         }
 
                         if (Duel.CanBeCasted() && me.CanAttack() && !target.IsInvul() && Utils.SleepCheck("duel"))
@@ -220,7 +225,7 @@ namespace DuelistSharp
                     foreach (var v in enemy)
                     {
                         var damage = Math.Floor(qDmg[Odds.Level - 1] * (1 - v.MagicDamageResist / 100));
-                        if (v.Health < damage)
+                        if (v.Health < damage && me.Distance2D(v) < Odds.CastRange)
                         {
                             Odds.UseAbility(v.Position);
                             Utils.Sleep(300, "killstealQ");
