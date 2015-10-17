@@ -83,7 +83,7 @@ namespace AxeBlinkUlti
                     }
                 }
 
-                if (target != null && Utils.SleepCheck("chop") && Chop.CanBeCasted() && me.IsAlive)
+                if (target != null && Utils.SleepCheck("chop") && Chop.CanBeCasted() && me.IsAlive && target.IsAlive)
                 {
                     if (Blink != null && me.Distance2D(target) > 400 && Utils.SleepCheck("blink") && Blink.CanBeCasted() && me.Health > 250)
                     {
