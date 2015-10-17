@@ -24,7 +24,7 @@ namespace ZeusSharp
         private static int manaForQ = 235;
         private static Font _text;
         private static Font _notice;
-        private static Key enableKey = Key.Space;
+        private static Key enableKey = Key.X;
         private static Key toggleKey = Key.J;
         private static Key stealToggleKey = Key.L;
         private static Key blinkToggleKey = Key.P;
