@@ -24,7 +24,6 @@ namespace ZeusSharp
         private static int manaForQ = 235;
         private static Font _text;
         private static Font _notice;
-        private static Line _line;
         private static Key enableKey = Key.Space;
         private static Key toggleKey = Key.J;
         private static Key stealToggleKey = Key.L;
@@ -47,10 +46,10 @@ namespace ZeusSharp
                Drawing.Direct3DDevice9,
                new FontDescription
                {
-                   FaceName = "Segoe UI",
-                   Height = 17,
+                   FaceName = "Tahoma",
+                   Height = 11,
                    OutputPrecision = FontPrecision.Default,
-                   Quality = FontQuality.ClearType
+                   Quality = FontQuality.Default
                });
 
             _notice = new Font(
@@ -60,10 +59,8 @@ namespace ZeusSharp
                    FaceName = "Segoe UI",
                    Height = 30,
                    OutputPrecision = FontPrecision.Default,
-                   Quality = FontQuality.ClearType
+                   Quality = FontQuality.Default
                });
-
-            _line = new Line(Drawing.Direct3DDevice9);
 
             Drawing.OnPreReset += Drawing_OnPreReset;
             Drawing.OnPostReset += Drawing_OnPostReset;
@@ -243,14 +240,14 @@ namespace ZeusSharp
                     {
 
                         var damage = Math.Floor(rDmg[me.Spellbook.Spell4.Level - 1] * (1 - v.MagicDamageResist / 100));
-                        if (v.Health < (damage - 40) && v != null && !v.IsIllusion)
+                        if (v.Health < (damage - 40) && v != null)
                         {
                             drawStealNotice = true;
                             steallableHero = v.NetworkName;
                             steallableHero = steallableHero.Replace("CDOTA_Unit_Hero_", "");
                             steallableHero = steallableHero.ToUpper();
 
-                            if (confirmSteal || stealToggle && v != null && !v.IsIllusion) {
+                            if (confirmSteal || stealToggle && v != null) {
                                 me.Spellbook.Spell4.UseAbility();
                                 Utils.Sleep(300, "killstealR");
                             }
@@ -317,7 +314,6 @@ namespace ZeusSharp
         {
             _text.Dispose();
             _notice.Dispose();
-            _line.Dispose();
         }
 
         static void Drawing_OnEndScene(EventArgs args)
@@ -332,28 +328,20 @@ namespace ZeusSharp
 
             if (active && toggle)
             {
-                DrawBox(2, 37, 110, 20, 1, new ColorBGRA(0, 0, 100, 100));
-                DrawFilledBox(2, 37, 110, 20, new ColorBGRA(0, 0, 0, 100));
-                DrawShadowText("Zeus#: Comboing!", 4, 37, Color.Green, _text);
+                _text.DrawText(null, "Zeus#: Comboing!", 4, 150, Color.Green);
             }
 
             if (toggle && !active)
             {
-                DrawBox(2, 37, 560, 54, 1, new ColorBGRA(0, 0, 100, 100));
-                DrawFilledBox(2, 37, 560, 54, new ColorBGRA(0, 0, 0, 100));
-                DrawShadowText("Zeus#: Enabled\nBlink: " + blinkToggle + " | AutoUltiSteal: " + stealToggle + " | Refresher: " + refresherToggle + " | [" + enableKey + "] for combo \n[" + toggleKey + "] for toggle combo | [" + blinkToggleKey + "] for toggle blink | [" + stealToggleKey + "] for toggle AutoUltiSteal | [" + refresherToggleKey + "] for toggle refresher", 4, 37, Color.LawnGreen, _text);
+                _text.DrawText(null, "Zeus#: Enabled | Blink: " + blinkToggle + " | AutoUltiSteal: " + stealToggle + " | Refresher: " + refresherToggle + " | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo | [" + blinkToggleKey + "] for toggle blink | [" + stealToggleKey + "] for toggle AutoUltiSteal | [" + refresherToggleKey + "] for toggle refresher", 4, 150, Color.White);
             }
             if (!toggle)
             {
-                DrawBox(2, 37, 185, 20, 1, new ColorBGRA(0, 0, 100, 100));
-                DrawFilledBox(2, 37, 185, 20, new ColorBGRA(0, 0, 0, 100));
-                DrawShadowText("Zeus#: Disabled | [" + toggleKey + "] for toggle", 4, 37, Color.DarkGray, _text);
+                _text.DrawText(null, "Zeus#: Disabled | [" + toggleKey + "] for toggle", 4, 150, Color.WhiteSmoke);
             }
             if (drawStealNotice && !confirmSteal && !stealToggle)
             {
-                //DrawBox(2, 400, 260, 34, 1, new ColorBGRA(0, 0, 100, 100));
-                //DrawFilledBox(2, 400, 260, 34, new ColorBGRA(0, 0, 0, 100));
-                DrawShadowText("PRESS [" + confirmStealKey + "] FOR STEAL " + steallableHero + "!", 7, 400, Color.Yellow, _notice);
+                _notice.DrawText(null, "PRESS [" + confirmStealKey + "] FOR STEAL " + steallableHero + "!", 4, 400, Color.Yellow);
             }
         }
 
@@ -361,46 +349,12 @@ namespace ZeusSharp
         {
             _text.OnResetDevice();
             _notice.OnResetDevice();
-            _line.OnResetDevice();
         }
 
         static void Drawing_OnPreReset(EventArgs args)
         {
             _text.OnLostDevice();
             _notice.OnLostDevice();
-            _line.OnLostDevice();
-        }
-
-        public static void DrawFilledBox(float x, float y, float w, float h, Color color)
-        {
-            var vLine = new Vector2[2];
-
-            _line.GLLines = true;
-            _line.Antialias = false;
-            _line.Width = w;
-
-            vLine[0].X = x + w / 2;
-            vLine[0].Y = y;
-            vLine[1].X = x + w / 2;
-            vLine[1].Y = y + h;
-
-            _line.Begin();
-            _line.Draw(vLine, color);
-            _line.End();
-        }
-
-        public static void DrawBox(float x, float y, float w, float h, float px, Color color)
-        {
-            DrawFilledBox(x, y + h, w, px, color);
-            DrawFilledBox(x - px, y, px, h, color);
-            DrawFilledBox(x, y - px, w, px, color);
-            DrawFilledBox(x + w, y, px, h, color);
-        }
-
-        public static void DrawShadowText(string stext, int x, int y, Color color, Font f)
-        {
-            f.DrawText(null, stext, x + 1, y + 1, Color.Black);
-            f.DrawText(null, stext, x, y, color);
         }
     }
 }
