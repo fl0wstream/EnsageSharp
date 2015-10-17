@@ -13,12 +13,14 @@ namespace ZeusSharp
 {
     internal class Program
     {
+        private static Item orchid, sheepstick, veil, soulring, arcane, blink, shiva, dagon, refresher;
         private static bool active;
         private static bool toggle = true;
         private static bool stealToggle = false;
         private static bool blinkToggle = true;
         private static bool drawStealNotice = false;
         private static bool confirmSteal = false;
+        private static bool refresherToggle = false;
         private static int manaForQ = 235;
         private static Font _text;
         private static Font _notice;
@@ -27,6 +29,7 @@ namespace ZeusSharp
         private static Key stealToggleKey = Key.L;
         private static Key blinkToggleKey = Key.P;
         private static Key confirmStealKey = Key.G;
+        private static Key refresherToggleKey = Key.O;
         private static string steallableHero;
 
         private static int[] rDmg = new int[3] { 225, 350, 475 };
@@ -52,7 +55,7 @@ namespace ZeusSharp
                Drawing.Direct3DDevice9,
                new FontDescription
                {
-                   FaceName = "Tahoma",
+                   FaceName = "Segoe UI",
                    Height = 30,
                    OutputPrecision = FontPrecision.Default,
                    Quality = FontQuality.Default
@@ -67,33 +70,53 @@ namespace ZeusSharp
         public static void Game_OnUpdate(EventArgs args)
         {
             var me = ObjectMgr.LocalHero;
-            if (!Game.IsInGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus)
+            if (!Game.IsInGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus || me == null)
             {
                 return;
             }
 
             // Items
 
-            var orchid = me.FindItem("item_orchid");
-            var sheepstick = me.FindItem("item_sheepstick");
-            var veil = me.FindItem("item_veil_of_discord");
-            var soulring = me.FindItem("item_soul_ring");
-            var arcane = me.FindItem("item_arcane_boots");
-            var blink = me.FindItem("item_blink");
-            var shiva = me.FindItem("item_shivas_guard");
-            var dagon = me.GetDagon();
+            if (orchid == null)
+                orchid = me.FindItem("item_orchid");
+
+            if (sheepstick == null)
+                sheepstick = me.FindItem("item_sheepstick");
+
+            if (veil == null)
+                veil = me.FindItem("item_veil_of_discord");
+
+            if (soulring == null)
+                soulring = me.FindItem("item_soul_ring");
+
+            if (arcane == null)
+                arcane = me.FindItem("item_arcane_boots");
+
+            if (blink == null)
+                blink = me.FindItem("item_blink");
+
+            if (shiva == null)
+                shiva = me.FindItem("item_shivas_guard");
+
+            if (dagon == null)
+                dagon = me.GetDagon();
+
+            if (refresher == null)
+                refresher = me.FindItem("item_refresher");
+
             var blinkRange = 1200;
+            var refresherComboManacost = me.Spellbook.Spell4.ManaCost + me.Spellbook.Spell2.ManaCost + me.Spellbook.Spell1.ManaCost + veil.ManaCost + orchid.ManaCost + sheepstick.ManaCost;
 
             // Main combo
 
-            if (active && toggle && me.CanCast())
+            if (active && toggle && me.CanCast() && me.IsAlive)
             {
                 var target = me.ClosestToMouseTarget(1000);
-                if (target.IsAlive && !target.IsInvul())
+                if (target != null && target.IsAlive && !target.IsInvul())
                 {
                     var targetPos = target.Position;
 
-                    if (blink.CanBeCasted() && (me.Distance2D(target) > (blinkRange - 500)) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1") && blinkToggle)
+                    if (blink != null && blink.CanBeCasted() && (me.Distance2D(target) > (blinkRange - 500)) && Utils.SleepCheck("blink") && Utils.SleepCheck("blink1") && blinkToggle)
                     {
                         blink.UseAbility(targetPos);
                         Utils.Sleep(1000 + Game.Ping, "blink1");
@@ -101,78 +124,92 @@ namespace ZeusSharp
 
                     Utils.Sleep(me.GetTurnTime(target) + Game.Ping, "blink");
 
-                    if (me.Health > 300 && me.Mana < me.Spellbook.Spell2.ManaCost && soulring.CanBeCasted() && Utils.SleepCheck("soulring"))
+                    if (soulring != null && me.Health > 300 && (me.Mana < me.Spellbook.Spell2.ManaCost || (me.Mana < refresherComboManacost && refresherToggle && refresher.CanBeCasted())) && soulring.CanBeCasted() && Utils.SleepCheck("soulring"))
                     {
                         soulring.UseAbility();
                         Utils.Sleep(150 + Game.Ping, "soulring");
                     }
 
-                    if (me.Mana < me.Spellbook.Spell2.ManaCost && arcane.CanBeCasted() && Utils.SleepCheck("arcane"))
+                    if (arcane != null && (me.Mana < me.Spellbook.Spell2.ManaCost || (me.Mana < refresherComboManacost && refresherToggle && refresher.CanBeCasted())) && arcane.CanBeCasted() && Utils.SleepCheck("arcane"))
                     {
                         arcane.UseAbility();
                         Utils.Sleep(150 + Game.Ping, "arcane");
                     }
 
-                    if (sheepstick.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("sheepstick"))
+                    if (sheepstick != null && sheepstick.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("sheepstick"))
                     {
                         sheepstick.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "sheepstick");
                     }
 
-                    if (orchid.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && !target.IsHexed() && Utils.SleepCheck("orchid"))
+                    if (orchid != null && orchid.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && !target.IsHexed() && Utils.SleepCheck("orchid"))
                     {
                         orchid.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "orchid");
                     }
 
-                    if (veil.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("veil"))
+                    if (veil != null && veil.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("veil"))
                     {
                         veil.UseAbility(target.Position);
                         Utils.Sleep(150 + Game.Ping, "veil");
                     }
 
-                    if (dagon.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("dagon"))
+                    if (dagon != null && dagon.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("dagon"))
                     {
                         dagon.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "dagon");
                     }
 
-                    if (shiva.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("shiva"))
+                    if (shiva != null && shiva.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("shiva"))
                     {
                         shiva.UseAbility();
                         Utils.Sleep(150 + Game.Ping, "shiva");
                     }
 
-                    if (me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700) && me.Mana > manaForQ)
+                    if (me.Spellbook.SpellQ != null && me.Spellbook.SpellQ.CanBeCasted() && me.Mana > me.Spellbook.Spell1.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("Q") && (!me.Spellbook.Spell2.CanBeCasted() || me.Distance2D(target) > 700) && me.Mana > manaForQ)
                     {
                         me.Spellbook.SpellQ.UseAbility(target);
                         Utils.Sleep(150 + Game.Ping, "Q");
                     }
 
-                    if (me.Spellbook.Spell2.CanBeCasted() && me.Mana > me.Spellbook.Spell2.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("W"))
+                    if (me.Spellbook.Spell2 != null && me.Spellbook.Spell2.CanBeCasted() && me.Mana > me.Spellbook.Spell2.ManaCost && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("W"))
                     {
                         me.Spellbook.Spell2.UseAbility(target);
                         Utils.Sleep(200 + Game.Ping, "W");
                     }
 
-                    if ((!(me.Spellbook.Spell2.CanBeCasted() && me.Spellbook.Spell1.CanBeCasted()) || target.IsMagicImmune()) && me.CanAttack())
+                    if ((!(me.Spellbook.Spell2.CanBeCasted() && me.Spellbook.Spell1.CanBeCasted()) || target.IsMagicImmune()) && me.CanAttack() && target != null)
                     {
                         me.Attack(target);
                     }
 
+                    if (refresherToggle && me.Mana > refresherComboManacost && target != null && !target.IsMagicImmune() && me.Spellbook.Spell4.CanBeCasted() && Utils.SleepCheck("ultiRefresher"))
+                    {
+                        me.Spellbook.Spell4.UseAbility();
+                        Utils.Sleep(50 + Game.Ping, "ultiRefresher");
                     }
+
+                    if (refresherToggle && refresher != null && refresher.CanBeCasted() && Utils.SleepCheck("refresher") && !target.IsMagicImmune() && target != null &&
+                        !me.Spellbook.Spell4.CanBeCasted() && !me.Spellbook.Spell2.CanBeCasted() && !me.Spellbook.Spell1.CanBeCasted() && me.Mana > refresherComboManacost)
+                    {
+                        refresher.UseAbility();
+                        Utils.Sleep(300 + Game.Ping, "refresher");
+                    }
+
+                }
                 }
         }
 
         public static void Killsteal(EventArgs args)
         {
+            var me = ObjectMgr.LocalHero;
+            if (me == null || !Game.IsInGame || me.Spellbook.Spell4 == null)
+                stealToggle = false;
+
             if (Utils.SleepCheck("killstealR") && Game.IsInGame)
             {
 
                 drawStealNotice = false;
-
-                var me = ObjectMgr.LocalHero;
-                var aghanim = me.FindItem("item_aghanim_scepter");
 
                 if (me.HasItem(ClassID.CDOTA_Item_UltimateScepter))
                 {
@@ -190,14 +227,14 @@ namespace ZeusSharp
                     {
 
                         var damage = Math.Floor(rDmg[me.Spellbook.Spell4.Level - 1] * (1 - v.MagicDamageResist / 100));
-                        if (v.Health < damage)
+                        if (v.Health < (damage - 40) && v != null)
                         {
                             drawStealNotice = true;
                             steallableHero = v.NetworkName;
                             steallableHero = steallableHero.Replace("CDOTA_Unit_Hero_", "");
                             steallableHero = steallableHero.ToUpper();
 
-                            if (confirmSteal || stealToggle) {
+                            if (confirmSteal || stealToggle && v != null) {
                                 me.Spellbook.Spell4.UseAbility();
                                 Utils.Sleep(300, "killstealR");
                             }
@@ -238,6 +275,12 @@ namespace ZeusSharp
                     Utils.Sleep(150, "toggleBlink");
                 }
 
+                if (Game.IsKeyDown(refresherToggleKey) && Utils.SleepCheck("toggleRefresher") && refresher != null)
+                {
+                    refresherToggle = !refresherToggle;
+                    Utils.Sleep(150, "toggleRefresher");
+                }
+
                 if (Game.IsKeyDown(confirmStealKey))
                 {
                     confirmSteal = true;
@@ -246,6 +289,9 @@ namespace ZeusSharp
                 {
                     confirmSteal = false;
                 }
+
+                if (refresher == null)
+                    refresherToggle = false;
             }
         }
 
@@ -272,7 +318,7 @@ namespace ZeusSharp
 
             if (toggle && !active)
             {
-                _text.DrawText(null, "Zeus#: Enabled | Blink: " + blinkToggle + " | AutoUltiSteal: " + stealToggle + " | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo | [" + blinkToggleKey + "] for toggle blink | [" + stealToggleKey + "] for toggle AutoUltiSteal", 4, 150, Color.White);
+                _text.DrawText(null, "Zeus#: Enabled | Blink: " + blinkToggle + " | AutoUltiSteal: " + stealToggle + " | Refresher: " + refresherToggle + " | [" + enableKey + "] for combo | [" + toggleKey + "] for toggle combo | [" + blinkToggleKey + "] for toggle blink | [" + stealToggleKey + "] for toggle AutoUltiSteal | [" + refresherToggleKey + "] for toggle refresher", 4, 150, Color.White);
             }
             if (!toggle)
             {
