@@ -13,17 +13,23 @@ namespace DuelistSharp
 {
     internal class Program
     {
-        private static Ability Duel, Heal;
-        private static Item Blink, armlet, mjollnir, medallion, solar, soulRing, urn, dust;
+        private static Ability Duel, Heal, Odds;
+        private static Item Blink, armlet, mjollnir, medallion, solar, soulRing, urn, dust, bladeMail, bkb, abyssal;
         private static Hero me, target;
         private static Key toggleKey = Key.J;
         private static Key activeKey = Key.Space;
+        private static Key bkbToggleKey = Key.G;
+        private static Key killstealToggleKey = Key.K;
         private static bool toggle = true;
         private static bool active;
+        private static bool bkbToggle = true;
+        private static bool killstealToggle = true;
         private static Font _text;
+        private static int[] qDmg = new int[4] { 40, 80, 120, 160 };
 
         static void Main(string[] args)
         {
+            Game.OnUpdate += Killsteal;
             Game.OnUpdate += Game_OnUpdate;
             Game.OnWndProc += Game_OnWndProc;
             Console.WriteLine("> DuelistSharp loaded!");
@@ -32,10 +38,10 @@ namespace DuelistSharp
                Drawing.Direct3DDevice9,
                new FontDescription
                {
-                   FaceName = "Tahoma",
-                   Height = 11,
+                   FaceName = "Segoe UI",
+                   Height = 14,
                    OutputPrecision = FontPrecision.Default,
-                   Quality = FontQuality.Default
+                   Quality = FontQuality.ClearType
                });
                 Drawing.OnPreReset += Drawing_OnPreReset;
                 Drawing.OnPostReset += Drawing_OnPostReset;
@@ -56,36 +62,52 @@ namespace DuelistSharp
             if (me == null)
                 return;
 
-            Duel = me.Spellbook.Spell4;
-            Heal = me.Spellbook.Spell2;
+            if (Duel == null)
+                Duel = me.Spellbook.Spell4;
+            if (Heal == null)
+                Heal = me.Spellbook.Spell2;
+            if (Odds == null)
+                Odds = me.Spellbook.Spell1;
 
-            Blink = me.FindItem("item_blink");
-            armlet = me.FindItem("item_armlet");
-            mjollnir = me.FindItem("item_mjollnir");
-            medallion = me.FindItem("item_medallion_of_courage");
-            solar = me.FindItem("item_solar_crest");
-            soulRing = me.FindItem("item_soul_ring");
-            urn = me.FindItem("item_urn_of_shadows");
-            dust = me.FindItem("item_dust");
+            if (Blink == null)
+                Blink = me.FindItem("item_blink");
+            if (armlet == null)
+                armlet = me.FindItem("item_armlet");
+            if (mjollnir == null)
+                mjollnir = me.FindItem("item_mjollnir");
+            if (medallion == null)
+                medallion = me.FindItem("item_medallion_of_courage");
+            if (solar == null)
+                solar = me.FindItem("item_solar_crest");
+            if (soulRing == null)
+                soulRing = me.FindItem("item_soul_ring");
+            if (bkb == null)
+                bkb = me.FindItem("item_black_king_bar");
+            if (abyssal == null)
+                abyssal = me.FindItem("item_abyssal_blade");
+            if (dust == null)
+                dust = me.FindItem("item_dust");
+            if (bladeMail == null)
+                bladeMail = me.FindItem("item_blade_mail");
 
-            //var duelManacost = Heal.ManaCost + Duel.ManaCost;
+            var duelManacost = Heal.ManaCost + Duel.ManaCost;
 
             // Main combo
 
             if (active && toggle)
             {
                 target = me.ClosestToMouseTarget(1000);
-                if (target.IsAlive && !target.IsInvul())
+                if (target != null && target.IsAlive && !target.IsInvul())
                 {
-                    if (Duel.CanBeCasted()) {
+                    if (me.CanAttack() && me.CanCast()) {
 
                         // here allied skills & items
 
-                        //if (soulRing != null && soulRing.CanBeCasted() && me.Mana < duelManacost && me.Health > 300 && Utils.SleepCheck("soulring"))
-                        //{
-                        //    soulRing.UseAbility();
-                        //    Utils.Sleep(150 + Game.Ping, "soulring");
-                        //}
+                        if (soulRing != null && soulRing.CanBeCasted() && me.Mana < duelManacost && me.Health > 300 && Utils.SleepCheck("soulring"))
+                        {
+                            soulRing.UseAbility();
+                            Utils.Sleep(150 + Game.Ping, "soulring");
+                        }
 
                         if (solar != null && solar.CanBeCasted() && Utils.SleepCheck("solar"))
                         {
@@ -93,11 +115,15 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "solar");
                         }
 
-                        // Blademail here
+                        if (bladeMail != null && bladeMail.CanBeCasted() && Utils.SleepCheck("blademail"))
+                        {
+                            bladeMail.UseAbility();
+                            Utils.Sleep(150 + Game.Ping, "blademail");
+                        }
 
                         if (armlet != null && armlet.CanBeCasted() && Utils.SleepCheck("armlet"))
                         {
-                            armlet.UseAbility();
+                            armlet.ToggleAbility();
                             Utils.Sleep(150 + Game.Ping, "armlet");
                         }
 
@@ -107,16 +133,16 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "mjollnir");
                         }
 
-                        if (Heal.CanBeCasted() && Utils.SleepCheck("heal"))
+                        if (bkb != null && bkb.CanBeCasted() && Utils.SleepCheck("bkb") && bkbToggle)
+                        {
+                            bkb.UseAbility();
+                            Utils.Sleep(150 + Game.Ping, "bkb");
+                        }
+
+                        if (Heal.CanBeCasted() && Utils.SleepCheck("heal") && (!bkb.CanBeCasted() || !bkbToggle))
                         {
                             Heal.UseAbility(me);
                             Utils.Sleep(150 + Game.Ping, "heal");
-                        }
-
-                        if (urn != null && urn.CanBeCasted() && Utils.SleepCheck("urn") && urn.CurrentCharges > 0 && me.Distance2D(target) < urn.CastRange && !target.IsMagicImmune())
-                        {
-                            urn.UseAbility(target);
-                            Utils.Sleep(150 + Game.Ping, "urn");
                         }
 
                         // Blink
@@ -135,7 +161,13 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "medallion");
                         }
 
-                        if (dust != null && dust.CanBeCasted() && target.CanGoInvis() && Utils.SleepCheck("dust"))
+                        if (abyssal != null && abyssal.CanBeCasted() && Utils.SleepCheck("abyssal"))
+                        {
+                            abyssal.UseAbility(target);
+                            Utils.Sleep(300 + Game.Ping, "abyssal");
+                        }
+
+                        if (dust != null && dust.CanBeCasted() && (target.CanGoInvis() || target.IsInvisible()) && Utils.SleepCheck("dust"))
                         {
                             dust.UseAbility();
                             Utils.Sleep(150 + Game.Ping, "dust");
@@ -145,6 +177,12 @@ namespace DuelistSharp
                         {
                             Duel.UseAbility(target);
                             Utils.Sleep(150 + Game.Ping, "duel");
+                        }
+
+                        if (!Duel.CanBeCasted() && Utils.SleepCheck("attack2"))
+                        {
+                            me.Attack(target);
+                            Utils.Sleep(Game.Ping + 1000, "attack2");
                         }
 
                         if (armlet != null && Utils.SleepCheck("armlet") && me.CanCast() && armlet.IsActivated)
@@ -159,7 +197,34 @@ namespace DuelistSharp
                         if (armlet != null && !armlet.IsActivated) {
                             armlet.ToggleAbility();
                         }
-                        me.Attack(target);
+                        if (Utils.SleepCheck("attack1"))
+                        {
+                            me.Attack(target);
+                            Utils.Sleep(1000, "attack1");
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void Killsteal(EventArgs args)
+        {
+            if (me == null || !Game.IsInGame || Odds == null)
+                killstealToggle = false;
+
+            if (Utils.SleepCheck("killstealQ") && Game.IsInGame && killstealToggle)
+            {
+                if (!active && toggle && Odds.CanBeCasted() && me.Mana > Odds.ManaCost)
+                {
+                    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune)).ToList();
+                    foreach (var v in enemy)
+                    {
+                        var damage = Math.Floor(qDmg[Odds.Level - 1] * (1 - v.MagicDamageResist / 100));
+                        if (v.Health < damage)
+                        {
+                            Odds.UseAbility(v.Position);
+                            Utils.Sleep(300, "killstealQ");
+                        }
                     }
                 }
             }
@@ -183,6 +248,18 @@ namespace DuelistSharp
                     toggle = !toggle;
                     Utils.Sleep(300, "toggle");
                 }
+
+                if (Game.IsKeyDown(bkbToggleKey) && Utils.SleepCheck("toggleBKB"))
+                {
+                    bkbToggle = !bkbToggle;
+                    Utils.Sleep(300, "toggleBKB");
+                }
+
+                if (Game.IsKeyDown(killstealToggleKey) && Utils.SleepCheck("toggleKS"))
+                {
+                    killstealToggle = !killstealToggle;
+                    Utils.Sleep(300, "toggleKS");
+                }
             }
         }
 
@@ -203,11 +280,11 @@ namespace DuelistSharp
 
             if (toggle && !active)
             {
-                _text.DrawText(null, "Duelist#: Enabled | [" + toggleKey + "] for toggle", 4, 400, Color.White);
+                _text.DrawText(null, "Duelist#: Enabled | BKB: " + bkbToggle + " | [" + toggleKey + "] for toggle combo | [" + bkbToggleKey + "] for toggle BKB\nKillsteal: " + killstealToggle + " | [" + killstealToggleKey + "] for killsteal toggle", 4, 400, Color.White);
             }
             if (!toggle)
             {
-                _text.DrawText(null, "Duelist#: Disabled | [" + toggleKey + "] for toggle", 4, 400, Color.WhiteSmoke);
+                _text.DrawText(null, "Duelist#: Disabled | [" + toggleKey + "] for toggle", 4, 400, Color.LightGray);
             }
             if (active)
             {
