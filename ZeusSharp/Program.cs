@@ -8,8 +8,6 @@ using Ensage.Common.Extensions;
 using Ensage.Common;
 using SharpDX.Direct3D9;
 using System.Windows.Input;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace ZeusSharp
 {
@@ -37,7 +35,7 @@ namespace ZeusSharp
         private static int[] rDmg = new int[3] { 225, 350, 475 };
 
         static void Main(string[] args)
-        {;
+        {
 
             Game.OnUpdate += Killsteal;
             Game.OnUpdate += Game_OnUpdate;
