@@ -238,20 +238,30 @@ namespace ZeusSharp
 
                 if (!active && toggle && me.Spellbook.Spell4.CanBeCasted() && me.Mana > me.Spellbook.Spell4.ManaCost)
                 {
-                    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune)).ToList();
+                    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune) && 
+                    e.ClassID != ClassID.CDOTA_Unit_Hero_Beastmaster_Hawk && 
+                    e.ClassID != ClassID.CDOTA_Unit_Hero_Beastmaster_Boar && 
+                    e.ClassID != ClassID.CDOTA_Unit_Hero_Beastmaster_Beasts && 
+                    e.ClassID != ClassID.CDOTA_Unit_Brewmaster_PrimalEarth &&
+                    e.ClassID != ClassID.CDOTA_Unit_Brewmaster_PrimalFire &&
+                    e.ClassID != ClassID.CDOTA_Unit_Brewmaster_PrimalStorm &&
+                    e.ClassID != ClassID.CDOTA_Unit_Undying_Tombstone &&
+                    e.ClassID != ClassID.CDOTA_Unit_Undying_Zombie &&
+                    e.ClassID != ClassID.CDOTA_Ability_Juggernaut_HealingWard).ToList();
+
                     foreach (var v in enemy)
                     {
 
                         var damage = Math.Floor(rDmg[me.Spellbook.Spell4.Level - 1] * (1 - v.MagicDamageResist / 100));
                         if (v.Health < (damage - 40) && v != null && !v.IsIllusion)
                         {
+                            drawStealNotice = true;
+
                             steallableHero = v.NetworkName;
                             steallableHero = steallableHero.Replace("CDOTA_Unit_Hero_", "");
                             steallableHero = steallableHero.ToUpper();
-                            if (steallableHero != "BEASTMASTER_BOAR" && steallableHero != "BEASTMASTER_HAWK")
-                                drawStealNotice = true;
 
-                            if (confirmSteal || stealToggle && v != null && !v.IsIllusion && steallableHero != "BEASTMASTER_BOAR" && steallableHero != "BEASTMASTER_HAWK") {
+                            if (confirmSteal || stealToggle && v != null && !v.IsIllusion) {
                                 me.Spellbook.Spell4.UseAbility();
                                 Utils.Sleep(300, "killstealR");
                             }
