@@ -25,6 +25,7 @@ namespace DuelistSharp
         private static bool bkbToggle = false;
         private static bool killstealToggle = true;
         private static Font _text;
+        private static Font _comboing;
         private static int[] qDmg = new int[4] { 40, 80, 120, 160 };
 
         static void Main(string[] args)
@@ -32,21 +33,34 @@ namespace DuelistSharp
             Game.OnUpdate += Killsteal;
             Game.OnUpdate += Game_OnUpdate;
             Game.OnWndProc += Game_OnWndProc;
+            Drawing.OnPreReset += Drawing_OnPreReset;
+            Drawing.OnPostReset += Drawing_OnPostReset;
+            Drawing.OnEndScene += Drawing_OnEndScene;
+            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+
             Console.WriteLine("> DuelistSharp loaded!");
+
+            DrawLib.Draw.Init();
 
             _text = new Font(
                Drawing.Direct3DDevice9,
                new FontDescription
                {
                    FaceName = "Segoe UI",
-                   Height = 14,
+                   Height = 16,
                    OutputPrecision = FontPrecision.Default,
                    Quality = FontQuality.ClearType
                });
-                Drawing.OnPreReset += Drawing_OnPreReset;
-                Drawing.OnPostReset += Drawing_OnPostReset;
-                Drawing.OnEndScene += Drawing_OnEndScene;
-                AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+
+            _comboing = new Font(
+               Drawing.Direct3DDevice9,
+               new FontDescription
+               {
+                   FaceName = "Segoe UI",
+                   Height = 22,
+                   OutputPrecision = FontPrecision.Default,
+                   Quality = FontQuality.ClearType
+               });
         }
 
         public static void Game_OnUpdate(EventArgs args)
@@ -115,7 +129,7 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "blademail");
                         }
 
-                        if (armlet != null && armlet.CanBeCasted() && Utils.SleepCheck("armlet1"))
+                        if (armlet != null && armlet.CanBeCasted() && Utils.SleepCheck("armlet1") && !armlet.IsToggled)
                         {
                             armlet.ToggleAbility();
                             Utils.Sleep(150 + Game.Ping, "armlet1");
@@ -127,19 +141,20 @@ namespace DuelistSharp
                             Utils.Sleep(150 + Game.Ping, "mjollnir");
                         }
 
+                        if (Heal.CanBeCasted() && Utils.SleepCheck("heal") && (!bkb.CanBeCasted() || !me.IsMagicImmune()))
+                        {
+                            Heal.UseAbility(me);
+                            Utils.Sleep(150 + Game.Ping, "heal");
+                        }
+                        Utils.ChainStun(me, 100, null, false);
+
                         if (bkb != null && bkb.CanBeCasted() && Utils.SleepCheck("bkb") && bkbToggle)
                         {
                             bkb.UseAbility();
                             Utils.Sleep(150 + Game.Ping, "bkb");
                         }
 
-                        if (Heal.CanBeCasted() && Utils.SleepCheck("heal") && (!bkb.CanBeCasted() || !bkbToggle))
-                        {
-                            Heal.UseAbility(me);
-                            Utils.Sleep(150 + Game.Ping, "heal");
-                        }
-
-                        Utils.ChainStun(me, 100, null, false);
+                        Utils.ChainStun(me, 200, null, false);
 
                         // Blink
 
@@ -150,6 +165,15 @@ namespace DuelistSharp
                         }
 
                         // Enemy items & skills
+
+                        //if (Odds.CanBeCasted() && Utils.SleepCheck("odds") && !target.IsMoving)
+                        //{
+                        //    Odds.UseAbility(target.Position);
+                        //    Utils.Sleep(200 + Game.Ping, "odds");
+                        //}
+
+                        if (!Odds.CanBeCasted())
+                            Utils.ChainStun(me, 200, null, false);
 
                         if (abyssal != null && abyssal.CanBeCasted() && Utils.SleepCheck("abyssal"))
                         {
@@ -190,10 +214,10 @@ namespace DuelistSharp
                             Utils.Sleep(Game.Ping + 1000, "attack2");
                         }
 
-                        if (armlet != null && Utils.SleepCheck("armlet") && me.CanCast() && armlet.IsActivated)
+                        if (armlet != null && Utils.SleepCheck("armlet") && me.CanCast() && armlet.IsToggled && (target == null || !target.IsAlive || !target.IsVisible))
                         {
-                            armlet.ToggleAbility();
-                            Utils.Sleep(150 + Game.Ping, "armlet");
+                           armlet.ToggleAbility();
+                          Utils.Sleep(150 + Game.Ping, "armlet");
                         }
 
                     }
@@ -221,7 +245,7 @@ namespace DuelistSharp
             {
                 if (!active && toggle && Odds.CanBeCasted() && me.Mana > Odds.ManaCost)
                 {
-                    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune)).ToList();
+                    var enemy = ObjectMgr.GetEntities<Hero>().Where(e => e.Team != me.Team && e.IsAlive && e.IsVisible && !e.IsIllusion && !e.UnitState.HasFlag(UnitState.MagicImmune) && me.Distance2D(e) < 700).ToList();
                     foreach (var v in enemy)
                     {
                         var damage = Math.Floor(qDmg[Odds.Level - 1] * (1 - v.MagicDamageResist / 100));
@@ -285,15 +309,19 @@ namespace DuelistSharp
 
             if (toggle && !active)
             {
-                _text.DrawText(null, "Duelist#: Enabled | BKB: " + bkbToggle + " | [" + toggleKey + "] for toggle combo | [" + bkbToggleKey + "] for toggle BKB\nKillsteal: " + killstealToggle + " | [" + killstealToggleKey + "] for killsteal toggle", 4, 400, Color.White);
+                DrawLib.Draw.DrawPanel(2, 400, 278, 46, 1, new ColorBGRA(0, 0, 100, 100));
+                DrawLib.Draw.DrawShadowText("BKB: " + bkbToggle + " | [" + toggleKey + "] for toggle combo | [" + bkbToggleKey + "] for toggle BKB\nKillsteal: " + killstealToggle + " | [" + killstealToggleKey + "] for killsteal toggle", 4, 415, Color.LawnGreen, _text);
+                DrawLib.Draw.DrawShadowText("Duelist#: Enabled", 4, 400, Color.LightSteelBlue, _text);
             }
             if (!toggle)
             {
-                _text.DrawText(null, "Duelist#: Disabled | [" + toggleKey + "] for toggle", 4, 400, Color.LightGray);
+                DrawLib.Draw.DrawPanel(2, 400, 175, 17, 1, new ColorBGRA(0, 0, 100, 100));
+                DrawLib.Draw.DrawShadowText("Duelist#: Disabled | [" + toggleKey + "] for toggle", 4, 400, Color.DarkGray, _text);
             }
-            if (active)
+            if (active && toggle)
             {
-                _text.DrawText(null, "Duelist#: Comboing!", 4, 400, Color.YellowGreen);
+                DrawLib.Draw.DrawPanel(2, 400, 150, 25, 1, new ColorBGRA(0, 0, 100, 100));
+                DrawLib.Draw.DrawShadowText("Duelist#: Comboing!", 4, 400, Color.YellowGreen, _comboing);
             }
         }
 
