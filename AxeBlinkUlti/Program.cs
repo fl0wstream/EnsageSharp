@@ -85,7 +85,7 @@ namespace AxeBlinkUlti
 
                 if (target != null && Utils.SleepCheck("chop") && Chop.CanBeCasted() && me.IsAlive && target.IsAlive)
                 {
-                    if (Blink != null && me.Distance2D(target) > 400 && Utils.SleepCheck("blink") && Blink.CanBeCasted() && me.Health > 250)
+                    if (Blink != null && me.Distance2D(target) > 400 && me.Distance2D(target) < Blink.CastRange && Utils.SleepCheck("blink") && Blink.CanBeCasted() && me.Health > 250)
                     {
                         Blink.UseAbility(target.Position);
                         Utils.Sleep(150 + Game.Ping, "blink");
