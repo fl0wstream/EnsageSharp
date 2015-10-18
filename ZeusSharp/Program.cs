@@ -245,12 +245,13 @@ namespace ZeusSharp
                         var damage = Math.Floor(rDmg[me.Spellbook.Spell4.Level - 1] * (1 - v.MagicDamageResist / 100));
                         if (v.Health < (damage - 40) && v != null && !v.IsIllusion)
                         {
-                            drawStealNotice = true;
                             steallableHero = v.NetworkName;
                             steallableHero = steallableHero.Replace("CDOTA_Unit_Hero_", "");
                             steallableHero = steallableHero.ToUpper();
+                            if (steallableHero != "BEASTMASTER_BOAR" && steallableHero != "BEASTMASTER_HAWK")
+                                drawStealNotice = true;
 
-                            if (confirmSteal || stealToggle && v != null && !v.IsIllusion) {
+                            if (confirmSteal || stealToggle && v != null && !v.IsIllusion && steallableHero != "BEASTMASTER_BOAR" && steallableHero != "BEASTMASTER_HAWK") {
                                 me.Spellbook.Spell4.UseAbility();
                                 Utils.Sleep(300, "killstealR");
                             }
