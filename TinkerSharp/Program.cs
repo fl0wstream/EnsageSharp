@@ -58,12 +58,9 @@ namespace TinkerSharp
                 return;
 
             // Ability init
-            if (Laser == null)
-                Laser = me.Spellbook.Spell1;
-            if (Rocket == null)
-                Rocket = me.Spellbook.Spell2;
-            if (Refresh == null)
-                Refresh = me.Spellbook.Spell4;
+            Laser = me.Spellbook.Spell1;
+            Rocket = me.Spellbook.Spell2;
+            Refresh = me.Spellbook.Spell4;
 
             // Item init
             Blink = me.FindItem("item_blink");
@@ -174,9 +171,7 @@ namespace TinkerSharp
                 !Ethereal.CanBeCasted() && 
                 !Dagon.CanBeCasted() && 
                 !Hex.CanBeCasted() && 
-                !Veil.CanBeCasted() && 
-                !Orchid.CanBeCasted() && 
-                !Shiva.CanBeCasted())
+                !Veil.CanBeCasted())
                 return true;
             else
             {
