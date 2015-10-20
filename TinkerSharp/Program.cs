@@ -89,7 +89,7 @@ namespace TinkerSharp
                 target = me.ClosestToMouseTarget(1000);
                 if (target != null && target.IsAlive && !target.IsIllusion && !target.IsMagicImmune() && Utils.SleepCheck("refresh") && !Refresh.IsChanneling)
                 {
-                    if (Soulring != null && me.Mana < manaForCombo && Soulring.CanBeCasted() && me.Health > 400 && Utils.SleepCheck("soulring"))
+                    if (Soulring != null && Soulring.CanBeCasted() && me.Health > 300 && Utils.SleepCheck("soulring"))
                     {
                         Soulring.UseAbility();
                         Utils.Sleep(150 + Game.Ping, "soulring");
