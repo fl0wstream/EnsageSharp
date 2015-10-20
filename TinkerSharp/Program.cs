@@ -99,7 +99,7 @@ namespace TinkerSharp
                     }
 
                     // Blink
-                    else if (Blink != null && Blink.CanBeCasted() && Utils.SleepCheck("blink"))
+                    else if (Blink != null && Blink.CanBeCasted() && Utils.SleepCheck("blink") && me.Distance2D(target) > 800)
                     {
                         Utils.Sleep(300 + Game.Ping, "blink");
                         Utils.ChainStun(me, me.GetTurnTime(target) * 1000 + Game.Ping, null, false);
