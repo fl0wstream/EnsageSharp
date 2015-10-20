@@ -51,11 +51,12 @@ namespace TinkerSharp
         {
             me = ObjectMgr.LocalHero;
 
-            if (me == null || !Game.IsInGame || Game.IsWatchingGame)
+            if (me == null || !Game.IsInGame || Game.IsWatchingGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Tinker)
+            {
+                Game.OnUpdate -= Game_OnUpdate;
+                Console.WriteLine("> Tinker# Unloaded!");         
                 return;
-
-            if (me.ClassID != ClassID.CDOTA_Unit_Hero_Tinker)
-                return;
+            }
 
             // Ability init
             Laser = me.Spellbook.Spell1;
@@ -99,7 +100,7 @@ namespace TinkerSharp
                     }
 
                     // Blink
-                    else if (Blink != null && Blink.CanBeCasted() && Utils.SleepCheck("blink") && me.Distance2D(target) > 800)
+                    else if (Blink != null && Blink.CanBeCasted() && Utils.SleepCheck("blink") && me.Distance2D(target) > 400)
                     {
                         Utils.Sleep(300 + Game.Ping, "blink");
                         Utils.ChainStun(me, me.GetTurnTime(target) * 1000 + Game.Ping, null, false);
