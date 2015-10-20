@@ -213,7 +213,11 @@ namespace ZeusSharp
                     }
 
                 }
+                else if (me.CanMove() && !me.IsChanneling())
+                {
+                    me.Move(Game.MousePosition);
                 }
+            }
         }
 
         public static void Killsteal(EventArgs args)
