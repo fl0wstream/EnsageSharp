@@ -161,6 +161,10 @@ namespace TinkerSharp
                         me.Attack(target);
                     }
                 }
+                else if (me.CanMove() && !me.IsChanneling() && !Refresh.IsChanneling)
+                {
+                    me.Move(Game.MousePosition);
+                }
             }
         }
 
