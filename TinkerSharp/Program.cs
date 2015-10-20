@@ -86,6 +86,9 @@ namespace TinkerSharp
             // Main combo
             if (active && toggle)
             {
+                if (target == null || !target.IsVisible)
+                    me.Move(Game.MousePosition);
+
                 target = me.ClosestToMouseTarget(1000);
                 if (target != null && target.IsAlive && !target.IsIllusion && !target.IsMagicImmune() && Utils.SleepCheck("refresh") && !Refresh.IsChanneling)
                 {
@@ -160,10 +163,6 @@ namespace TinkerSharp
                     {
                         me.Attack(target);
                     }
-                }
-                else if (me.CanMove() && !me.IsChanneling() && (!Refresh.IsChanneling || !Refresh.CanBeCasted()))
-                {
-                    me.Move(Game.MousePosition);
                 }
             }
         }
