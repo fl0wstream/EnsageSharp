@@ -115,6 +115,8 @@ namespace DuelistSharp
                 {
                     if (me.CanAttack() && me.CanCast()) {
 
+                        var linkens = target.Modifiers.Any(x => x.Name == "modifier_item_spheretarget") || target.Inventory.Items.Any(x => x.Name == "item_sphere");
+
                         // here allied skills & items
 
                         if (soulRing != null && soulRing.CanBeCasted() && me.Mana < duelManacost && me.Health > 300 && Utils.SleepCheck("soulring"))
@@ -202,7 +204,7 @@ namespace DuelistSharp
                             Utils.Sleep(200 + Game.Ping, "dust");
                         }
 
-                        if (Duel.CanBeCasted() && me.CanAttack() && !target.IsInvul() && Utils.SleepCheck("duel"))
+                        if (Duel.CanBeCasted() && me.CanAttack() && !target.IsInvul() && Utils.SleepCheck("duel") && !linkens)
                         {
                             Duel.UseAbility(target);
                             Utils.Sleep(150 + Game.Ping, "duel");
