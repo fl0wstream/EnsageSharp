@@ -87,7 +87,7 @@ namespace TinkerSharp
             // Main combo
             if (active && toggle)
             {
-                if (target == null || !target.IsVisible)
+                if ((target == null || !target.IsVisible) && !me.IsChanneling())
                     me.Move(Game.MousePosition);
 
                 target = me.ClosestToMouseTarget(1000);
