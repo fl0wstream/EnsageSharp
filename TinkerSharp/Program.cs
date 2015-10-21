@@ -51,10 +51,8 @@ namespace TinkerSharp
         {
             me = ObjectMgr.LocalHero;
 
-            if (me == null || !Game.IsInGame || Game.IsWatchingGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Tinker)
-            {
-                Game.OnUpdate -= Game_OnUpdate;
-                Console.WriteLine("> Tinker# Unloaded!");         
+            if (me == null || !Game.IsInGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Tinker)
+            {      
                 return;
             }
 
