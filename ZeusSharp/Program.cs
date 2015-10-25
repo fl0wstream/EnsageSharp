@@ -13,7 +13,7 @@ namespace ZeusSharp
 {
     internal class Program
     {
-        private static Item orchid, sheepstick, veil, soulring, arcane, blink, shiva, dagon, refresher;
+        private static Item orchid, sheepstick, veil, soulring, arcane, blink, shiva, dagon, refresher, ethereal;
         private static bool active;
         private static bool toggle = true;
         private static bool stealToggle = false;
@@ -75,12 +75,9 @@ namespace ZeusSharp
         {
             var me = ObjectMgr.LocalHero;
             if (!Game.IsInGame || me.ClassID != ClassID.CDOTA_Unit_Hero_Zuus || me == null)
-            {
                 return;
-            }
 
             // Items
-
             if (orchid == null)
                 orchid = me.FindItem("item_orchid");
 
@@ -101,16 +98,18 @@ namespace ZeusSharp
 
             if (shiva == null)
                 shiva = me.FindItem("item_shivas_guard");
-
-            if (dagon == null)
                 dagon = me.GetDagon();
 
             if (refresher == null)
                 refresher = me.FindItem("item_refresher");
 
+            if (ethereal == null)
+                ethereal = me.FindItem("item_ethereal_blade");
+
             var blinkRange = 1200;
             var refresherComboManacost = me.Spellbook.Spell4.ManaCost + me.Spellbook.Spell2.ManaCost + me.Spellbook.Spell1.ManaCost;
 
+            // Manacost calculation
             if (veil != null)
                 refresherComboManacost += veil.ManaCost;
 
@@ -124,7 +123,6 @@ namespace ZeusSharp
                 refresherComboManacost += refresher.ManaCost;
 
             // Main combo
-
             if (active && toggle && me.CanCast() && me.IsAlive)
             {
                 var target = me.ClosestToMouseTarget(1000);
@@ -169,6 +167,14 @@ namespace ZeusSharp
                         veil.UseAbility(target.Position);
                         Utils.Sleep(150 + Game.Ping, "veil");
                     }
+
+                    if (ethereal != null && ethereal.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("ethereal"))
+                    {
+                        ethereal.UseAbility(target);
+                        Utils.Sleep(150 + Game.Ping, "ethereal");
+                    }
+
+                    Utils.ChainStun(me, 100, null, false);
 
                     if (dagon != null && dagon.CanBeCasted() && !target.IsMagicImmune() && !target.IsIllusion && Utils.SleepCheck("dagon"))
                     {
