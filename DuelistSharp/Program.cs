@@ -160,7 +160,7 @@ namespace DuelistSharp
 
                         // Blink
 
-                        if (Blink != null && Blink.CanBeCasted() && me.Distance2D(target) > 300 && Utils.SleepCheck("blink1"))
+                        if (Blink != null && Blink.CanBeCasted() && me.Distance2D(target) > 300 && me.Distance2D(target) <= 1170 && Utils.SleepCheck("blink1"))
                         {
                             Blink.UseAbility(target.Position);
                             Utils.Sleep(150 + Game.Ping, "blink1");
