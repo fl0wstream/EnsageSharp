@@ -18,7 +18,7 @@ namespace TinkerSharp
         private static Hero me;
         private static Hero target;
         private static Key toggleKey = Key.J;
-        private static Key activeKey = Key.Space;
+        private static Key activeKey = Key.X;
         private static bool toggle = true;
         private static bool active;
         private static Font _text;
