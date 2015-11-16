@@ -63,7 +63,7 @@ namespace TinkerSharp
 
             // Item init
             Blink = me.FindItem("item_blink");
-            Dagon = me.GetDagon();
+            Dagon = me.Inventory.Items.FirstOrDefault(item => item.Name.Contains("item_dagon"));
             Hex = me.FindItem("item_sheepstick");
             Soulring = me.FindItem("item_soul_ring");
             Ethereal = me.FindItem("item_ethereal_blade");
