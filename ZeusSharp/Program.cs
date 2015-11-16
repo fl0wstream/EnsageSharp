@@ -98,7 +98,8 @@ namespace ZeusSharp
 
             if (shiva == null)
                 shiva = me.FindItem("item_shivas_guard");
-                dagon = me.GetDagon();
+                
+                dagon = me.Inventory.Items.FirstOrDefault(item => item.Name.Contains("item_dagon"));
 
             if (refresher == null)
                 refresher = me.FindItem("item_refresher");
