@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Windows.Input;
@@ -19,8 +19,10 @@ namespace TinkerSharp
         private static Hero target;
         private static Key toggleKey = Key.J;
         private static Key activeKey = Key.Space;
+        private static Key blinkToggleKey = Key.P;
         private static bool toggle = true;
         private static bool active;
+        private static bool blinkToggle = true;
         private static int maximumDistance = 1500;
         private static Font _text;
 
@@ -69,7 +71,7 @@ namespace TinkerSharp
             Ethereal = me.FindItem("item_ethereal_blade");
             Veil = me.FindItem("item_veil_of_discord");
             Orchid = me.FindItem("item_orchid");
-            Shiva = me.FindItem("item_shiva");
+            Shiva = me.FindItem("item_shivas_guard");
 
             // Manacost calculations
             var manaForCombo = Laser.ManaCost + Rocket.ManaCost;
@@ -81,6 +83,8 @@ namespace TinkerSharp
                 manaForCombo += 150;
             if (Veil != null && Veil.CanBeCasted())
                 manaForCombo += 50;
+            if (Shiva != null && Shiva.CanBeCasted())
+                manaForCombo += 100;
 
             // Main combo
             if (active && toggle)
@@ -98,14 +102,21 @@ namespace TinkerSharp
                     }
 
                     // Blink
-                    else if (Blink != null && Blink.CanBeCasted() && Utils.SleepCheck("blink") && me.Distance2D(target) > 400)
+
+                    if (Blink != null && Blink.CanBeCasted() && (me.Distance2D(target) > 500) && Utils.SleepCheck("Blink") && blinkToggle)
                     {
-                        Utils.Sleep(300 + Game.Ping, "blink");
-                        Utils.ChainStun(me, me.GetTurnTime(target) * 1000 + Game.Ping, null, false);
                         Blink.UseAbility(target.Position);
+                        Utils.Sleep(1000 + Game.Ping, "Blink");
                     }
 
                     // Items
+                    else if (Shiva != null && Shiva.CanBeCasted() && Utils.SleepCheck("shiva"))
+                    {
+                        Shiva.UseAbility();
+                        Utils.Sleep(100 + Game.Ping, "shiva");
+                        Utils.ChainStun(me, 200 + Game.Ping, null, false);
+                    }
+
                     else if (Veil != null && Veil.CanBeCasted() && Utils.SleepCheck("veil"))
                     {
                         Veil.UseAbility(target.Position);
@@ -172,7 +183,8 @@ namespace TinkerSharp
                 !Rocket.CanBeCasted() && 
                 !Ethereal.CanBeCasted() && 
                 !Dagon.CanBeCasted() && 
-                !Hex.CanBeCasted() && 
+                !Hex.CanBeCasted() &&
+                !Shiva.CanBeCasted() &&
                 !Veil.CanBeCasted())
                 return true;
             else
@@ -199,8 +211,16 @@ namespace TinkerSharp
                 {
                     toggle = !toggle;
                     Utils.Sleep(300, "toggle");
+
                 }
-            }
+
+               if (Game.IsKeyDown(blinkToggleKey) && Utils.SleepCheck("toggleBlink"))
+               {
+                blinkToggle = !blinkToggle;
+                Utils.Sleep(150, "toggleBlink");
+
+               }
+        }
         }
 
         static void CurrentDomain_DomainUnload(object sender, EventArgs e)
@@ -220,7 +240,7 @@ namespace TinkerSharp
             if (toggle && !active)
             {
                 DrawLib.Draw.DrawPanel(2, 350, 310, 20, 1, new ColorBGRA(0, 0, 100, 100));
-                DrawLib.Draw.DrawShadowText("Tinker#: Enabled | [" + toggleKey + "] for toggle | [" + activeKey + "] for combo", 4, 350, Color.LawnGreen, _text);
+                DrawLib.Draw.DrawShadowText("Tinker#: Enabled | [" + toggleKey + "] for toggle | [" + activeKey + "] for combo [" + blinkToggleKey + "] for toggle Blink", 4, 350, Color.LawnGreen, _text);
             }
             if (!toggle)
             {
